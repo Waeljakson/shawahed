@@ -1,0 +1,62 @@
+name: إعداد قاعدة البيانات (Appwrite)
+
+on:
+  workflow_dispatch:
+    inputs:
+      reset_admin_password:
+        description: 'إعادة تعيين كلمة مرور المدير إلى القيمة المحفوظة في Secrets'
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: ['setup/**', 'site/config.json', '.github/workflows/setup-appwrite.yml']
+
+concurrency:
+  group: appwrite-setup
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: التحقق من الإعدادات
+        id: check
+        env:
+          KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: |
+          PID=$(node -p "require('./site/config.json').projectId || ''")
+          if [ -z "$KEY" ] || [ -z "$PID" ]; then
+            echo "::warning::لم يكتمل الإعداد بعد: أضف APPWRITE_API_KEY في Secrets و projectId في site/config.json"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.ready == 'true'
+        with:
+          node-version: 20
+
+      - name: تجهيز وظيفة إدارة المستخدمين
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          node -e "const c=require('./site/config.json');require('fs').writeFileSync('setup/function/src/config.json', JSON.stringify({loginDomain:c.loginDomain}))"
+          tar -czf setup/function.tar.gz -C setup/function package.json src
+
+      - name: تثبيت الحزم
+        if: steps.check.outputs.ready == 'true'
+        working-directory: setup
+        run: npm install --no-audit --no-fund
+
+      - name: إنشاء/تحديث قاعدة البيانات
+        if: steps.check.outputs.ready == 'true'
+        working-directory: setup
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+          RESET_ADMIN_PASSWORD: ${{ inputs.reset_admin_password }}
+        run: node setup.mjs

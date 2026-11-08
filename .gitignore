@@ -1,0 +1,4 @@
+node_modules/
+setup/function.tar.gz
+setup/function/src/config.json
+.DS_Store

@@ -1,0 +1,9 @@
+{
+  "name": "shawahed-setup",
+  "private": true,
+  "type": "module",
+  "scripts": { "setup": "node setup.mjs" },
+  "dependencies": {
+    "node-appwrite": "31.1.0"
+  }
+}
