@@ -1,6 +1,6 @@
 {
-  "endpoint": "",
-  "projectId": "",
+  "endpoint": "https://fra.cloud.appwrite.io/v1",
+  "projectId": "6af00acf002d8a546fb9",
   "loginDomain": "mishkat.example.com",
   "schoolName": "متوسطة وثانوية مشكاة الشعلة الأهلية",
   "academicYear": "العام الدراسي 1448هـ"
